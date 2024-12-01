@@ -8,10 +8,10 @@ import { Box } from "@radix-ui/themes";
 
 export default function Navbar() {
   return (
-      <header className="fixed top-3 border bg-cyan-900/10 backdrop-blur-3xl border-white/10 w-[70%] h-14 pl-3 pr-3 rounded-lg z-50">
+      <header className="fixed top-3 border rounded-full bg-cyan-900/10 backdrop-blur-3xl border-white/10 w-[70%] h-18 px-8 pr-3 z-50 mt-10 ">
         <div className="container flex h-14 items-center">
           <div className="flex items-center gap-2 mr-8">
-            <span className={`font-semibold text-xl`}>KUIPER</span>
+            <span className={`font-semibold text-xl`}>SuiPlay</span>
           </div>
           
           <nav className="flex items-center gap-6 text-sm">          
@@ -25,7 +25,10 @@ export default function Navbar() {
             
           </nav>
           <Box className="float-right ml-[59%]">
-          <ConnectButton />
+          <ConnectButton style={{
+            borderRadius: "9999px",
+            height:"42px"
+          }}/>
         </Box>
         </div>
       </header>
