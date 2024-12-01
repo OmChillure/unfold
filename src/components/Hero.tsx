@@ -18,9 +18,6 @@ function Hero() {
     <p className="text-gray-300 mb-8 relative z-10">
       Fair online gaming platform. Can you beat other players?
     </p>
-    <Button className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-6 text-lg relative z-10">
-      Leaderboard
-    </Button>
   </div>
   </>
   )
