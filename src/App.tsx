@@ -14,6 +14,9 @@ import "./index.css";
 function App() {
   return (
     <Router>
+      <div className="flex justify-center items-center">
+        <Navbar />
+      </div>
       <Routes>
         <Route path="/" element={
           <>
