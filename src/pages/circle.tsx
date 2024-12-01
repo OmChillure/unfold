@@ -3,7 +3,8 @@
 import React, { useState, useEffect, FormEvent, ChangeEvent } from 'react';
 import { Clock, ChevronLeft, ChevronRight, ChevronsRight, History } from 'lucide-react';
 import { Player } from '../types/react-types';
-import clsx from 'clsx'; // Utility for conditional classNames
+import clsx from 'clsx';
+import { ConnectButton, useCurrentWallet } from '@mysten/dapp-kit';
 
 const COLORS: string[] = [
   '#7c3aed', '#059669', '#84cc16', '#06b6d4', '#8b5cf6',
@@ -13,16 +14,16 @@ const COLORS: string[] = [
 const ROUND_TIME: number = 20; // 20 seconds
 
 const LotteryWheel: React.FC = () => {
+  const { currentWallet, connectionStatus } = useCurrentWallet();
   const [players, setPlayers] = useState<Player[]>([]);
-  const [inputId, setInputId] = useState<string>('');
   const [inputAmount, setInputAmount] = useState<string>('');
   const [timeLeft, setTimeLeft] = useState<number>(ROUND_TIME);
   const [isSpinning, setIsSpinning] = useState<boolean>(false);
   const [winner, setWinner] = useState<Player | null>(null);
   const [roundId, setRoundId] = useState<number>(183391);
   const [totalPool, setTotalPool] = useState<number>(0);
-  const [rotation, setRotation] = useState<number>(0); // Rotation angle in degrees
-  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null); // Temporary state
+  const [rotation, setRotation] = useState<number>(0);
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null); 
 
   useEffect(() => {
     if (timeLeft > 0 && players.length > 0 && !isSpinning) {
@@ -35,38 +36,60 @@ const LotteryWheel: React.FC = () => {
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
+
+    if (connectionStatus !== 'connected') {
+      alert('Please connect your wallet to participate.');
+      return;
+    }
+
     if (players.length >= 10) {
       alert('Maximum 10 players allowed per round');
       return;
     }
 
     const amount = parseFloat(inputAmount);
-    if (!inputId.trim() || !amount || isNaN(amount)) {
-      alert('Please enter a valid ID and amount.');
+    if (!currentWallet?.accounts[0].address || !amount || isNaN(amount)) {
+      alert('Invalid wallet address or amount.');
       return;
     }
 
-    const totalPoints = players.reduce((sum, p) => sum + p.points, 0) + amount;
-    const newPlayers: Player[] = [...players, {
-      id: inputId.trim(),
-      points: amount,
-      percentage: 0,
-      color: COLORS[players.length % COLORS.length]
-    }];
+    const newPlayerId = currentWallet.accounts[0].address;
 
-    // Recalculate percentages
-    newPlayers.forEach(player => {
-      player.percentage = (player.points / totalPoints) * 100;
-    });
+    // Check if the player already exists
+    const existingPlayerIndex = players.findIndex(p => p.id === newPlayerId);
+    if (existingPlayerIndex !== -1) {
+      // Update existing player's points
+      const updatedPlayers = [...players];
+      updatedPlayers[existingPlayerIndex].points += amount;
+      const totalPoints = updatedPlayers.reduce((sum, p) => sum + p.points, 0);
+      updatedPlayers.forEach(player => {
+        player.percentage = (player.points / totalPoints) * 100;
+      });
+      setPlayers(updatedPlayers);
+      setTotalPool(totalPoints);
+    } else {
+      // Add new player
+      const totalPoints = players.reduce((sum, p) => sum + p.points, 0) + amount;
+      const newPlayers: Player[] = [...players, {
+        id: newPlayerId,
+        points: amount,
+        percentage: 0,
+        color: COLORS[players.length % COLORS.length]
+      }];
 
-    setPlayers(newPlayers);
-    setTotalPool(totalPoints);
-    setInputId('');
-    setInputAmount('');
+      newPlayers.forEach(player => {
+        player.percentage = (player.points / totalPoints) * 100;
+      });
 
-    if (newPlayers.length === 1) {
-      setTimeLeft(ROUND_TIME);
+      setPlayers(newPlayers);
+      setTotalPool(totalPoints);
+
+      if (newPlayers.length === 1) {
+        setTimeLeft(ROUND_TIME);
+      }
     }
+
+    setInputAmount('');
   };
 
   const selectWinner = (): void => {
@@ -74,7 +97,6 @@ const LotteryWheel: React.FC = () => {
 
     setIsSpinning(true);
 
-    // Calculate cumulative percentages to determine ranges
     const cumulativePercentages = players.reduce((acc, player) => {
       const last = acc.length > 0 ? acc[acc.length - 1] : 0;
       acc.push(last + player.percentage);
@@ -123,10 +145,6 @@ const LotteryWheel: React.FC = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleIdChange = (e: ChangeEvent<HTMLInputElement>): void => {
-    setInputId(e.target.value);
-  };
-
   const handleAmountChange = (e: ChangeEvent<HTMLInputElement>): void => {
     setInputAmount(e.target.value);
   };
@@ -152,6 +170,7 @@ const LotteryWheel: React.FC = () => {
 
   return (
     <div className="mt-20 p-6 w-full max-w-7xl mx-auto text-white grid grid-cols-1 md:grid-cols-4 gap-8">
+
       {/* Left Panel */}
       <div className="space-y-2 md:col-span-1">
         <h2 className="text-lg mb-4">{players.length} Players</h2>
@@ -209,7 +228,7 @@ const LotteryWheel: React.FC = () => {
               ))}
             </svg>
           </div>
-          {/* Center Text */}
+
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <div className="text-6xl font-bold mb-2">
               {winner ? (
@@ -243,15 +262,30 @@ const LotteryWheel: React.FC = () => {
         </div>
         <div className="bg-gray-800 p-4 rounded">
           <div className="text-gray-400">Your Entries</div>
-          <div className="text-2xl font-bold">0</div>
+          <div className="text-2xl font-bold">
+            {connectionStatus === 'connected' && currentWallet?.accounts[0].address 
+              ? players.filter(p => p.id === currentWallet.accounts[0].address).length 
+              : 0}
+          </div>
         </div>
         <div className="bg-gray-800 p-4 rounded">
           <div className="text-gray-400">Your Win Chance</div>
-          <div className="text-2xl font-bold">0%</div>
+          <div className="text-2xl font-bold">
+            {connectionStatus === 'connected' && currentWallet?.accounts[0].address && players.length > 0 
+              ? (
+                  (
+                    (players.filter(p => p.id === currentWallet.accounts[0].address)
+                      .reduce((sum, p) => sum + p.points, 0) / totalPool) * 100
+                  ).toFixed(2)
+                ) + '%'
+              : '0%'}
+          </div>
         </div>
-        {/* Bottom Input Panel */}
+
         <div className="mt-6">
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            {/* Removed ID Input */}
+            {/* 
             <input
               type="text"
               value={inputId}
@@ -261,6 +295,7 @@ const LotteryWheel: React.FC = () => {
               required
               disabled={isSpinning}
             />
+            */}
             <input
               type="number"
               value={inputAmount}
@@ -270,23 +305,52 @@ const LotteryWheel: React.FC = () => {
               required
               min="0.01"
               step="0.01"
-              disabled={isSpinning}
+              disabled={isSpinning || connectionStatus !== 'connected'}
             />
             <button
               type="submit"
               className={clsx(
                 'bg-blue-600 px-6 py-2 rounded hover:bg-blue-700 transition-colors duration-300',
-                isSpinning && 'opacity-50 cursor-not-allowed'
+                isSpinning || connectionStatus !== 'connected' ? 'opacity-50 cursor-not-allowed' : ''
               )}
-              disabled={isSpinning}
+              disabled={isSpinning || connectionStatus !== 'connected'}
             >
               {isSpinning ? 'Spinning...' : 'Bid'}
             </button>
           </form>
+          {connectionStatus !== 'connected' && (
+            <div className="mt-2 text-red-500 text-sm">
+              Please connect your wallet to place a bid.
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
+};
+
+const styles = {
+  container: {
+    padding: '20px',
+    fontFamily: 'Arial, sans-serif',
+  },
+  walletInfo: {
+    marginTop: '20px',
+  },
+  accountButton: {
+    background: 'none',
+    border: 'none',
+    color: 'blue',
+    textDecoration: 'underline',
+    cursor: 'pointer',
+    padding: '0',
+    fontSize: '1em',
+  },
+  selectedAccount: {
+    marginTop: '10px',
+    padding: '10px',
+    border: '1px solid #ccc',
+  },
 };
 
 export default LotteryWheel;
