@@ -1,37 +1,26 @@
-import { ConnectButton } from "@mysten/dapp-kit";
-// import {useCurrentAccount} from "@mysten/dapp-kit";
-// import { isValidSuiObjectId } from "@mysten/sui/utils";
-import { Box, Flex, Heading } from "@radix-ui/themes";
-// import { useState } from "react";
-// import { Counter } from "./Counter";
-// import { CreateCounter } from "./CreateCounter";
+import Navbar from "./components/Navbar";
+import "./index.css";
+import Hero from "./components/Hero";
+import About from "./components/About";
+import RaffleBanner from "./components/Discount";
+import CasinoGames from "./components/Games";
+import Footer from "./components/Footer";
+import RecentGames from "./components/Players";
 
 function App() {
-  // const currentAccount = useCurrentAccount();
-  // const [counterId, setCounter] = useState(() => {
-  //   const hash = window.location.hash.slice(1);
-  //   return isValidSuiObjectId(hash) ? hash : null;
-  // });
-
   return (
     <>
-      <Flex
-        position="sticky"
-        px="4"
-        py="2"
-        justify="between"
-        style={{
-          borderBottom: "1px solid var(--gray-a2)",
-        }}
-      >
-        <Box>
-          <Heading>dApp Starter Template</Heading>
-        </Box>
-
-        <Box>
-          <ConnectButton />
-        </Box>
-      </Flex>
+      <div className="flex justify-center items-center">
+        <Navbar />
+      </div>
+      <Hero />
+      <About />
+      <div className="flex justify-center items-center">
+        <RaffleBanner />
+      </div>
+      <CasinoGames />
+      <RecentGames />
+      <Footer />
     </>
   );
 }
