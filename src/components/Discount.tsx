@@ -1,5 +1,3 @@
-import React from "react"
-
 export default function RaffleBanner() {
     return (
       <div className="relative w-[90%] h-[200px] overflow-hidden rounded-xl bg-gradient-to-r from-purple-600 via-purple-500 to-blue-500">

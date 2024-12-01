@@ -6,6 +6,7 @@
 import { ConnectButton } from "@mysten/dapp-kit"
 import { Box } from "@radix-ui/themes";
 
+
 export default function Navbar() {
   return (
       <header className="fixed top-3 border rounded-full bg-cyan-900/10 backdrop-blur-3xl border-white/10 w-[70%] h-18 px-8 pr-3 z-50 mt-10 ">
