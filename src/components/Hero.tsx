@@ -19,7 +19,7 @@ function Hero() {
       Fair online gaming platform. Can you beat other players?
     </p>
     <Button className="bg-purple-600 hover:bg-purple-700 text-white px-10 py-6 text-lg relative z-10 rounded-full ">
-      Leaderboar
+      Leaderboard
     </Button>
   </div>
   </>
