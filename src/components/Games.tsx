@@ -19,7 +19,7 @@ export default function RecentGames() {
           Choose one out of our three games and earn a boatload of money!!
         </h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-items-center">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 justify-items-center">
           {/* Blackjack Card */}
           <Card className="bg-blue-950/50 backdrop-blur-sm border border-white/10 w-80 h-96 flex flex-col">
             <CardHeader className="p-0 mb-24">
@@ -41,7 +41,7 @@ export default function RecentGames() {
             </CardBody> */}
             <CardFooter className="mt-2">
               <Button
-                onClick={() => handleNavigation("/blackjack")}
+                onClick={() => handleNavigation("/trading")}
                 className="w-full"
               >
                 Play Now
@@ -49,7 +49,6 @@ export default function RecentGames() {
             </CardFooter>
           </Card>
 
-          {/* American Roulette Card */}
           <Card className="bg-blue-950/50 backdrop-blur-sm border border-white/10 w-80 h-96 flex flex-col">
             <CardHeader className="p-0 mb-24">
               <div className="relative w-full h-48 mb-4">
