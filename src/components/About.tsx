@@ -3,20 +3,13 @@ import { Card, CardContent } from "../components/ui/card"
 
 export default function About() {
   return (
-    <div className="min-h-screen bg-gradient-to-b bg-[#0A0D0C]  relative overflow-hidden px-4 py-20">
+    <div className="min-h-screen relative overflow-hidden px-4 py-20">
       <div className=" absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-emerald-900 rounded-full opacity-20 blur-[100px]" />
       
       <div className="relative z-10 max-w-6xl mx-auto text-center">
-        <div className="inline-block mb-2">
-          <div className="px-4 py-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10">
-            <span className="text-emerald-400 text-sm flex items-center gap-2">
-              🚀 Your Crypto
-            </span>
-          </div>
-        </div>
 
         <h1 className="text-4xl md:text-6xl font-light text-white mb-6 tracking-wide">
-          Power Your Crypto
+          Level Up your Trading Game
         </h1>
 
         <p className="text-gray-400 text-lg mb-16 max-w-2xl mx-auto">
@@ -74,10 +67,6 @@ export default function About() {
             </CardContent>
           </Card>
         </div>
-
-        <button className="bg-emerald-400 hover:bg-emerald-500 text-black font-medium px-6 py-3 rounded-full transition-colors">
-          Get Started →
-        </button>
       </div>
     </div>
   )

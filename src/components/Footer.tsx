@@ -2,8 +2,8 @@ import { ArrowUpRight, DiscIcon as Discord, TextIcon as Telegram } from 'lucide-
 
 export default function Footer() {
   return (
-    <footer className=" text-white py-12">
-      <div className="max-w-7xl mx-auto px-4">
+    <footer className=" text-white py-12 mt-40">
+      <div className="w-[99%] mx-auto px-4">
         {/* Title */}
         <h2 className="text-6xl font-bold text-center mb-12 tracking-wider">
           Crypto Casino

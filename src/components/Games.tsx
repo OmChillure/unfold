@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card"
 
 export default function RecentGames() {
   return (
-    <div className="min-h-screen p-8">
+    <div className="min-h-screen p-8 mt-[15%]">
       <div className="max-w-7xl mx-auto">
         <h1 className="text-5xl font-bold text-white text-center mb-12">
           Recent games
