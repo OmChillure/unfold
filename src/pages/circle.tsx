@@ -1,20 +1,17 @@
 'use client'
 
 import React, { useState, useEffect, FormEvent, ChangeEvent } from 'react';
+import { io, Socket } from 'socket.io-client';
 import { Clock, ChevronLeft, ChevronRight, ChevronsRight, History } from 'lucide-react';
 import { Player } from '../types/react-types';
 import clsx from 'clsx';
 import { ConnectButton, useCurrentWallet } from '@mysten/dapp-kit';
 
-const COLORS: string[] = [
-  '#7c3aed', '#059669', '#84cc16', '#06b6d4', '#8b5cf6',
-  '#ec4899', '#f97316', '#14b8a6', '#6366f1', '#f59e0b'
-];
-
-const ROUND_TIME: number = 20; // 20 seconds
+const ROUND_TIME: number = 20;
 
 const LotteryWheel: React.FC = () => {
   const { currentWallet, connectionStatus } = useCurrentWallet();
+  const [socket, setSocket] = useState<Socket | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
   const [inputAmount, setInputAmount] = useState<string>('');
   const [timeLeft, setTimeLeft] = useState<number>(ROUND_TIME);
@@ -23,16 +20,39 @@ const LotteryWheel: React.FC = () => {
   const [roundId, setRoundId] = useState<number>(183391);
   const [totalPool, setTotalPool] = useState<number>(0);
   const [rotation, setRotation] = useState<number>(0);
-  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null); 
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+
+  useEffect(() => {
+    const newSocket = io('http://localhost:3001'); // Replace with your server URL
+    setSocket(newSocket);
+
+    newSocket.on('connect', () => {
+      console.log('Connected to server');
+    });
+
+    newSocket.on('gameState', (state: any) => {
+      setPlayers(state.players);
+      setRoundId(state.roundId);
+      setTotalPool(state.totalPool);
+      setTimeLeft(state.timeLeft);
+      setIsSpinning(state.isSpinning);
+      setWinner(state.winner);
+      setRotation(state.rotation || 0);
+    });
+
+    return () => {
+      newSocket.disconnect();
+    };
+  }, []);
 
   useEffect(() => {
     if (timeLeft > 0 && players.length > 0 && !isSpinning) {
       const timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
       return () => clearInterval(timer);
     } else if (timeLeft === 0 && players.length > 0 && !isSpinning) {
-      selectWinner();
+      socket?.emit('selectWinner');
     }
-  }, [timeLeft, players, isSpinning]);
+  }, [timeLeft, players, isSpinning, socket]);
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
@@ -53,90 +73,8 @@ const LotteryWheel: React.FC = () => {
       return;
     }
 
-    const newPlayerId = currentWallet.accounts[0].address;
-
-    // Check if the player already exists
-    const existingPlayerIndex = players.findIndex(p => p.id === newPlayerId);
-    if (existingPlayerIndex !== -1) {
-      // Update existing player's points
-      const updatedPlayers = [...players];
-      updatedPlayers[existingPlayerIndex].points += amount;
-      const totalPoints = updatedPlayers.reduce((sum, p) => sum + p.points, 0);
-      updatedPlayers.forEach(player => {
-        player.percentage = (player.points / totalPoints) * 100;
-      });
-      setPlayers(updatedPlayers);
-      setTotalPool(totalPoints);
-    } else {
-      // Add new player
-      const totalPoints = players.reduce((sum, p) => sum + p.points, 0) + amount;
-      const newPlayers: Player[] = [...players, {
-        id: newPlayerId,
-        points: amount,
-        percentage: 0,
-        color: COLORS[players.length % COLORS.length]
-      }];
-
-      newPlayers.forEach(player => {
-        player.percentage = (player.points / totalPoints) * 100;
-      });
-
-      setPlayers(newPlayers);
-      setTotalPool(totalPoints);
-
-      if (newPlayers.length === 1) {
-        setTimeLeft(ROUND_TIME);
-      }
-    }
-
+    socket?.emit('placeBid', { amount, playerId: currentWallet.accounts[0].address });
     setInputAmount('');
-  };
-
-  const selectWinner = (): void => {
-    if (players.length === 0) return;
-
-    setIsSpinning(true);
-
-    const cumulativePercentages = players.reduce((acc, player) => {
-      const last = acc.length > 0 ? acc[acc.length - 1] : 0;
-      acc.push(last + player.percentage);
-      return acc;
-    }, [] as number[]);
-
-    const random = Math.random() * 100;
-
-    let tempSelectedPlayer: Player | null = null;
-    for (let i = 0; i < cumulativePercentages.length; i++) {
-      if (random <= cumulativePercentages[i]) {
-        tempSelectedPlayer = players[i];
-        break;
-      }
-    }
-
-    if (!tempSelectedPlayer) {
-      tempSelectedPlayer = players[players.length - 1];
-    }
-
-    setSelectedPlayer(tempSelectedPlayer); // Set temporary selected player
-
-    const winnerIndex = players.findIndex(p => p.id === tempSelectedPlayer.id);
-    const previousPercentages = players.slice(0, winnerIndex).reduce((sum, p) => sum + p.percentage, 0);
-    const winnerPercentage = players[winnerIndex].percentage;
-
-    const randomFullRotations = Math.floor(Math.random() * 3) + 3;
-    const anglePerPercentage = 360 / 100;
-    const targetAngle = 360 * randomFullRotations - ((previousPercentages + winnerPercentage / 2) * anglePerPercentage);
-
-    setRotation(prev => prev + targetAngle);
-
-    const rotationDuration = 5000; // 5 seconds
-    setTimeout(() => {
-      setIsSpinning(false);
-      setWinner(tempSelectedPlayer); // Set winner after spinning
-      setSelectedPlayer(null); // Reset temporary state
-      setTimeLeft(ROUND_TIME); // Reset timer for next round
-      // Optionally, you can reset players or handle post-win logic here
-    }, rotationDuration);
   };
 
   const formatTime = (seconds: number): string => {
@@ -149,7 +87,6 @@ const LotteryWheel: React.FC = () => {
     setInputAmount(e.target.value);
   };
 
-  // Helper function to generate SVG path for a segment
   const generateSegmentPath = (index: number, total: number, percentage: number, radius: number = 100) => {
     const anglePerPercentage = 360 / 100;
     const startAngle = (players.slice(0, index).reduce((sum, p) => sum + p.percentage, 0)) * anglePerPercentage;
