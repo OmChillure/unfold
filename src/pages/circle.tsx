@@ -23,7 +23,7 @@ const LotteryWheel: React.FC = () => {
   const [roundId, setRoundId] = useState<number>(183391);
   const [totalPool, setTotalPool] = useState<number>(0);
   const [rotation, setRotation] = useState<number>(0);
-  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null); 
+  const [ , setSelectedPlayer] = useState<Player | null>(null); 
 
   useEffect(() => {
     if (timeLeft > 0 && players.length > 0 && !isSpinning) {
