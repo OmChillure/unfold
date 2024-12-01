@@ -3,13 +3,13 @@ import { Card, CardContent } from "../components/ui/card"
 
 export default function About() {
   return (
-    <div className="min-h-screen relative overflow-hidden px-4 py-20">
+    <div className="min-h-screen relative overflow-hidden px-4 py-20 bg-[#071425]">
       <div className=" absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-emerald-900 rounded-full opacity-20 blur-[100px]" />
       
       <div className="relative z-10 max-w-6xl mx-auto text-center">
 
         <h1 className="text-4xl md:text-6xl font-light text-white mb-6 tracking-wide">
-          Level Up your Trading Game
+          Level Up your Luck Game
         </h1>
 
         <p className="text-gray-400 text-lg mb-16 max-w-2xl mx-auto">

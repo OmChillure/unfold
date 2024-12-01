@@ -1,7 +1,7 @@
 export default function RaffleBanner() {
     return (
-      <div className="relative w-[90%] h-[200px] overflow-hidden rounded-xl bg-gradient-to-r from-purple-600 via-purple-500 to-blue-500">
-        <div className="absolute inset-0 flex items-center justify-between p-8">
+      <div className="relative w-[90%] h-[200px] overflow-hidden rounded-xl bg-gradient-to-r from-purple-600 via-purple-500 to-blue-500 bg-[#071425]">
+        <div className="absolute inset-0 flex items-center justify-between p-8 ">
           {/* Left content */}
           <div className="space-y-4 max-w-[50%]">
             <h2 className="text-3xl font-bold text-white">

@@ -13,7 +13,9 @@ const queryClient = new QueryClient();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <Theme appearance="dark">
+        <div style={{ backgroundColor: "black", height: "100vh" }}>
+
+    <Theme >
       <QueryClientProvider client={queryClient}>
         <SuiClientProvider networks={networkConfig} defaultNetwork="testnet">
           <WalletProvider autoConnect>
@@ -22,5 +24,6 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         </SuiClientProvider>
       </QueryClientProvider>
     </Theme>
+    </div>
   </React.StrictMode>,
 );

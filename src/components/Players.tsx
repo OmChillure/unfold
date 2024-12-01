@@ -92,8 +92,8 @@ interface GameRecord {
   
   export default function RecentGames() {
     return (
-      <div className="min-h-screen p-8">
-        <div className="max-w-7xl mx-auto">
+      <div className="min-h-screen p-8 bg-[#071425]">
+        <div className="max-w-7xl mx-auto mt-40">
           <h1 className="text-5xl font-bold text-white text-center mb-12">
             Live Players
           </h1>

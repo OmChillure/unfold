@@ -22,7 +22,7 @@ function App() {
           <>
             <Hero />
             <About />
-            <div className="flex justify-center items-center">
+            <div className="flex justify-center items-center bg-[#071425]">
               <RaffleBanner />
             </div>
             <CasinoGames />
