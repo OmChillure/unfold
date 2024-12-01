@@ -81,10 +81,8 @@ const LotteryWheel: React.FC = () => {
       return acc;
     }, [] as number[]);
 
-    // Select a random number between 0 and 100
     const random = Math.random() * 100;
 
-    // Determine the winner based on the random number
     let tempSelectedPlayer: Player | null = null;
     for (let i = 0; i < cumulativePercentages.length; i++) {
       if (random <= cumulativePercentages[i]) {
@@ -99,19 +97,16 @@ const LotteryWheel: React.FC = () => {
 
     setSelectedPlayer(tempSelectedPlayer); // Set temporary selected player
 
-    // Calculate the angle to rotate the wheel so that the winner's segment aligns with the pointer
     const winnerIndex = players.findIndex(p => p.id === tempSelectedPlayer.id);
     const previousPercentages = players.slice(0, winnerIndex).reduce((sum, p) => sum + p.percentage, 0);
     const winnerPercentage = players[winnerIndex].percentage;
 
-    // Calculate the angle: random number of full rotations plus the angle to land the winner segment
-    const randomFullRotations = Math.floor(Math.random() * 3) + 3; // 3 to 5 full rotations
+    const randomFullRotations = Math.floor(Math.random() * 3) + 3;
     const anglePerPercentage = 360 / 100;
     const targetAngle = 360 * randomFullRotations - ((previousPercentages + winnerPercentage / 2) * anglePerPercentage);
 
     setRotation(prev => prev + targetAngle);
 
-    // Stop spinning after the rotation animation duration
     const rotationDuration = 5000; // 5 seconds
     setTimeout(() => {
       setIsSpinning(false);
