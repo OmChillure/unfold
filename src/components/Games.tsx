@@ -25,14 +25,14 @@ export default function RecentGames() {
             <CardHeader className="p-0 mb-24">
               <div className="relative w-full h-48 mb-4">
                 <img
-                  src="/placeholder.svg?height=192&width=320"
+                  src="/rocket.png"
                   alt="Blackjack"
-                  className="rounded-t-lg w-full h-full object-cover"
+                  className="rounded-t-lg w-full h-56 object-cover mt-16"
                 />
               </div>
             </CardHeader>
               <CardTitle className="text-xl text-purple-200 text-center">
-                Blackjack
+                Up / Down
               </CardTitle>
             {/* <CardBody className="flex-grow">
               <p className="text-center text-gray-200">
