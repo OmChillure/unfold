@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useInfiniteCards } from '../lib/useInfiniteCards';
 import { Button } from '../components/ui/button';
-import axios from 'axios';
+import { io } from 'socket.io-client';
+import { toast } from 'react-hot-toast';
 
 type CardType = 'Live' | 'Bidding';
 
@@ -13,20 +14,17 @@ interface CardProps {
   number: number;
   price: number | null;
   referencePrice: number | null;
-}
-
-interface PriceData {
-  price: {
-    price: string;
-    expo: number;
+  onBid: (direction: 'high' | 'low') => void;
+  result?: {
+    winner?: boolean;
+    amount?: number;
   };
 }
 
-interface SUIResponse {
-  parsed: PriceData[];
-}
+// Initialize socket outside component to prevent multiple connections
+const socket = io('http://localhost:3001');
 
-const Card = ({ type, number, price, referencePrice }: CardProps) => {
+const Card = ({ type, number, price, referencePrice, onBid, result }: CardProps) => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const isLive = type === 'Live';
 
@@ -39,15 +37,23 @@ const Card = ({ type, number, price, referencePrice }: CardProps) => {
   }, []);
 
   const handleHighClick = () => {
-    console.log('High clicked for card:', number);
+    if (!isLive) onBid('high');
   };
 
   const handleLowClick = () => {
-    console.log('Low clicked for card:', number);
+    if (!isLive) onBid('low');
   };
 
   return (
     <div className="w-80 h-96 bg-white border border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700 flex flex-col justify-between p-4">
+      {result && (
+        <div className={`text-center mb-2 p-2 rounded ${
+          result.winner ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+        }`}>
+          {result.winner ? `Won $${result.amount?.toFixed(2)}!` : 'Lost'}
+        </div>
+      )}
+
       <div className="flex justify-center">
         <Button
           variant="default"
@@ -62,6 +68,7 @@ const Card = ({ type, number, price, referencePrice }: CardProps) => {
           High
         </Button>
       </div>
+
       <div className="flex flex-col items-center space-y-4">
         <div className={`px-4 py-1 rounded-full ${
           isLive ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
@@ -71,11 +78,11 @@ const Card = ({ type, number, price, referencePrice }: CardProps) => {
         <span className="text-xl text-gray-500 dark:text-gray-400">Card #{number}</span>
         <div className="text-center space-y-2">
           <div className="text-2xl font-bold text-gray-900 dark:text-white">
-            {price ? `$${price.toLocaleString()}` : 'Loading...'}
+            {price ? `$${price.toLocaleString(undefined, { minimumFractionDigits: 4 })}` : 'Loading...'}
           </div>
           {isLive && (
             <div className="text-sm text-gray-600 dark:text-gray-400">
-              Reference: ${referencePrice?.toLocaleString() || 'Loading...'}
+              Reference: ${referencePrice?.toLocaleString(undefined, { minimumFractionDigits: 4 }) || 'Loading...'}
             </div>
           )}
           <div className="text-lg text-gray-600 dark:text-gray-300">
@@ -83,6 +90,7 @@ const Card = ({ type, number, price, referencePrice }: CardProps) => {
           </div>
         </div>
       </div>
+
       <div className="flex justify-center">
         <Button
           variant="default"
@@ -105,74 +113,61 @@ export default function InfiniteCardCarousel() {
   const { cards, currentIndex, next, prev } = useInfiniteCards();
   const [isMounted, setIsMounted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(30);
-  const [suiPrice, setSUIPrice] = useState<number | null>(null);
+  const [currentPrice, setCurrentPrice] = useState<number | null>(null);
   const [referencePrices, setReferencePrices] = useState<{ [key: number]: number }>({});
-  const [transitioningCards, setTransitioningCards] = useState<Set<number>>(new Set());
+  const [results, setResults] = useState<{ [key: number]: { winner: boolean; amount: number } }>({});
 
   useEffect(() => {
     setIsMounted(true);
-  }, []);
 
-  useEffect(() => {
-    const fetchBTCPrice = async () => {
-      try {
-        const response = await axios.get('https://hermes.pyth.network/v2/updates/price/latest?ids%5B%5D=0x23d7315113f5b1d3ba7a83604c44b94d79f4fd69af77f804fc7f920a6dc65744');
-        const data = (response.data as SUIResponse).parsed;
-        if (data && data[0]) {
-          const price = parseInt(data[0].price.price) * Math.pow(10, data[0].price.expo);
-          setSUIPrice(price);
-          
-          // Check for transitioning cards and store their reference prices
-          transitioningCards.forEach(cardNumber => {
-            setReferencePrices(prev => ({
-              ...prev,
-              [cardNumber]: price
-            }));
-            setTransitioningCards(prev => {
-              const newSet = new Set(prev);
-              newSet.delete(cardNumber);
-              return newSet;
-            });
-          });
-        }
-      } catch (error) {
-        console.error('Error fetching SUI price:', error);
+    socket.on('gameState', (state) => {
+      setCurrentPrice(state.currentRound.currentPrice);
+      setTimeLeft(state.currentRound.timeLeft);
+      const currentCard = cards[currentIndex];
+      if (currentCard) {
+        setReferencePrices(prev => ({
+          ...prev,
+          [currentCard]: state.currentRound.currentPrice
+        }));
       }
+    });
+
+    socket.on('roundResult', (result) => {
+      const { roundId, won, amount } = result;
+      setResults(prev => ({
+        ...prev,
+        [roundId]: { winner: won, amount }
+      }));
+      if (won) {
+        toast.success(`Won $${amount.toFixed(2)}!`);
+      } else {
+        toast.error('Better luck next time!');
+      }
+      // Auto advance to next card after result
+      setTimeout(next, 2000);
+    });
+
+    socket.on('timeUpdate', ({ timeLeft }) => {
+      setTimeLeft(timeLeft);
+    });
+
+    return () => {
+      socket.off('gameState');
+      socket.off('roundResult');
+      socket.off('timeUpdate');
     };
+  }, [currentIndex, cards, next]);
 
-    fetchBTCPrice();
-    const priceInterval = setInterval(fetchBTCPrice, 1000);
+  const handleBid = (cardNumber: number, direction: 'high' | 'low') => {
+    socket.emit('placeBid', {
+      roundId: cardNumber,
+      prediction: direction,
+      amount: 0.01 // Default bid amount
+    });
+    toast.success(`Placed ${direction} bid`);
+  };
 
-    return () => clearInterval(priceInterval);
-  }, [transitioningCards]);
-
-  useEffect(() => {
-    const nextCardNumber = cards[currentIndex + 1];
-    if (nextCardNumber && !referencePrices[nextCardNumber]) {
-      setTransitioningCards(prev => new Set([...prev, nextCardNumber]));
-    }
-  }, [currentIndex, cards]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      next();
-      setTimeLeft(30);
-    }, 1 * 30 * 1000);
-
-    return () => clearInterval(interval);
-  }, [next]);
-
-  useEffect(() => {
-    const countdown = setInterval(() => {
-      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-
-    return () => clearInterval(countdown);
-  }, []);
-
-  if (!isMounted) {
-    return null;
-  }
+  if (!isMounted) return null;
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
@@ -214,8 +209,10 @@ export default function InfiniteCardCarousel() {
                     <Card
                       type={cardType}
                       number={cardNumber}
-                      price={suiPrice}
+                      price={currentPrice}
                       referencePrice={referencePrices[cardNumber]}
+                      onBid={(direction) => handleBid(cardNumber, direction)}
+                      result={results[cardNumber]}
                     />
                   </div>
                 );
